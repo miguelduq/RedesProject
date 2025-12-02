@@ -3,6 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <title>Would You Rather - Python WebSocket</title>
+
+  <style>
+    /* começa sempre escondido */
+    #questionSection {
+      display: none;
+    }
+
+    #sendQuestionSection {
+      display: none;
+    }
+
+    #startGameSection {
+      display: none;
+    }
+
+    #playersSection {
+      display: none;
+    }
+
+    #waitingScreen {
+      display: none;
+    }
+
+  </style>
+
 </head>
 <body>
   <h1>Would You Rather (Demo com Flask-SocketIO)</h1>
@@ -25,25 +50,32 @@
   <div id="sendQuestionSection">
     <hr>
     <h3>Host: enviar pergunta</h3>
-    <input id="optA" placeholder="Opção A" />
-    <input id="optB" placeholder="Opção B" />
     <button id="btnSendQuestion">Enviar pergunta</button>
+  </div>
+
+  <div id="startGameSection">
+    <hr>
     <button id="btnStartGame">Iniciar jogo</button>
   </div>
 
   
-  <div>
+  <div id="playersSection">
     <hr>
     <h3>Jogadores na sala:</h3>
     <pre id="playersList"></pre>
+  </div>
 
+  
+  <div id="questionSection">
+    <hr>
     <h3>Pergunta atual:</h3>
     <p id="questionText"></p>
+    
     <button id="btnChooseA">Escolher A</button>
     <button id="btnChooseB">Escolher B</button>
   </div>
   
-  <div id="waitingScreen" style="display:none; margin-top:20px;">
+  <div id="waitingScreen" style="margin-top:20px;">
     <h2>Apenas aguardando o Host iniciar a partida...</h2>
   </div>
 
@@ -57,26 +89,42 @@
 
     let currentRoomCode = null;
 
-    const btnCreateRoom   = document.getElementById("btnCreateRoom");
-    const roomInfo        = document.getElementById("roomInfo");
-    const roomCodeInput   = document.getElementById("roomCodeInput");
-    const playerNameInput = document.getElementById("playerNameInput");
-    const btnJoinRoom     = document.getElementById("btnJoinRoom");
+
+    // lista jogadores
+    const playersSection = document.getElementById("playersSection");
     const playersList     = document.getElementById("playersList");
-    const messages        = document.getElementById("messages");
-    const optA            = document.getElementById("optA");
-    const optB            = document.getElementById("optB");
-    const btnSendQuestion = document.getElementById("btnSendQuestion");
-    const btnStartGame    = document.getElementById("btnStartGame");
+
+    // Questions Section
+    const questionSection = document.getElementById("questionSection");
     const questionText    = document.getElementById("questionText");
     const btnChooseA      = document.getElementById("btnChooseA");
     const btnChooseB      = document.getElementById("btnChooseB");
-    const joinRoomSection = document.getElementById("joinRoomSection");
-    const createRoomSection = document.getElementById("createRoomSection");
-    const sendQuestionSection = document.getElementById("sendQuestionSection");
+
+    // waiting screen 
     const waitingScreen = document.getElementById("waitingScreen");
 
+    // create Room Section
+    const btnCreateRoom   = document.getElementById("btnCreateRoom");
+    const createRoomSection = document.getElementById("createRoomSection");
+    const roomInfo        = document.getElementById("roomInfo");
 
+    // entrar na sala
+    const joinRoomSection = document.getElementById("joinRoomSection");
+    const roomCodeInput   = document.getElementById("roomCodeInput");
+    const playerNameInput = document.getElementById("playerNameInput");
+    const btnJoinRoom     = document.getElementById("btnJoinRoom");
+
+    // mandar perguntas
+    const sendQuestionSection = document.getElementById("sendQuestionSection");
+    const btnSendQuestion = document.getElementById("btnSendQuestion");
+
+    // iniciar jogo
+    const startGameSection = document.getElementById("startGameSection");
+    const btnStartGame    = document.getElementById("btnStartGame");
+
+    // messages 
+    const messages        = document.getElementById("messages");
+    
 
 
 
@@ -91,9 +139,6 @@
       socket.emit("createRoom", { roomCode });
     };
 
-
-
-
     // sala criada
     socket.on("roomCreated", ({ roomCode }) => {
       currentRoomCode = roomCode;
@@ -103,6 +148,9 @@
 
       // host não precisa mais ver a parte de entrar em sala
       joinRoomSection.style.display = "none";
+
+      // mostrar o botao de inciar 
+      startGameSection.style.display = "block";
 
       // se quiser, também pode desabilitar o botão
       btnCreateRoom.disabled = true;
@@ -138,14 +186,19 @@
     };
 
 
-
-
-
     // atualização de jogadores
     socket.on("playersUpdate", ({ players }) => {
-      playersList.textContent = JSON.stringify(players, null, 2);
-    });
 
+      playersSection.style.display = "block";
+
+      const nomes = Object.values(players);
+
+      if (nomes.length === 0) {
+        playersList.textContent = "Nenhum jogador conectado ainda.";
+      } else {
+        playersList.textContent = nomes.map(n => "- " + n).join("\n");
+      }
+    });
 
 
 
@@ -168,6 +221,16 @@
 
     socket.on("gameStarted", () => {
       messages.textContent = "Jogo iniciado!";
+
+      questionSection.style.display = "block";
+
+      sendQuestionSection.style.display = "block";
+
+      startGameSection.style.display = "none";
+
+      waitingScreen.style.display = "none";
+
+      playersSection.style.display = "none";
     });
 
 
@@ -180,24 +243,18 @@
         return;
       }
 
-      const optionA = optA.value.trim();
-      const optionB = optB.value.trim();
+      // const optionA = optA.value.trim();
+      // const optionB = optB.value.trim();
 
-      if (!optionA || !optionB) {
-        messages.textContent = "Preencha as duas opções.";
-        return;
-      }
+      // if (!optionA || !optionB) {
+      //   messages.textContent = "Preencha as duas opções.";
+      //   return;
+      // }
 
       socket.emit("sendQuestion", {
         roomCode: currentRoomCode,
-        optionA,
-        optionB
       });
     };
-
-
-
-
 
     // receber nova pergunta
     socket.on("newQuestion", ({ optionA, optionB }) => {

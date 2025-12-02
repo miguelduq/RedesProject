@@ -117,10 +117,10 @@ def handle_start_game(data):
     if not room:
         return
 
-    sid = request.sid
-    if sid != room["host_id"]:
-        emit("errorMessage", "Apenas o host pode iniciar o jogo.")
-        return
+    # sid = request.sid
+    # if sid != room["host_id"]:
+    #     emit("errorMessage", "Apenas o host pode iniciar o jogo.")
+    #     return
 
     print(f"Jogo iniciado na sala {room_code}")
     emit("gameStarted", to=room_code)
@@ -129,17 +129,29 @@ def handle_start_game(data):
 @socketio.on("sendQuestion")
 def handle_send_question(data):
     room_code = data.get("roomCode")
-    option_a = data.get("optionA")
-    option_b = data.get("optionB")
 
     room = rooms.get(room_code)
     if not room:
+        emit("errorMessage", "Sala não encontrada.")
         return
+    
+    perguntas = [
+        {"a": "Ser invisível",            "b": "Ler mentes"},
+        {"a": "Nunca mais comer doce",    "b": "Nunca mais comer salgado"},
+        {"a": "Morar na praia",           "b": "Morar na montanha"},
+        {"a": "Viajar no tempo",          "b": "Teletransportar"},
+    ]
 
-    sid = request.sid
-    if sid != room["host_id"]:
-        emit("errorMessage", "Apenas o host pode enviar perguntas.")
-        return
+    # opcional: só o host pode enviar perguntas
+    # sid = request.sid
+    # if sid != room["host_id"]:
+    #     emit("errorMessage", "Apenas o host pode enviar perguntas.")
+    #     return
+
+    # pega uma pergunta aleatória
+    pergunta = random.choice(perguntas)
+    option_a = pergunta["a"]
+    option_b = pergunta["b"]
 
     print(f"Pergunta enviada na sala {room_code}: A) {option_a}  B) {option_b}")
     emit("newQuestion", {"optionA": option_a, "optionB": option_b}, to=room_code)
