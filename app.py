@@ -83,6 +83,7 @@ def handle_create_room(data):
     rooms[room_code] = {
         "host_id": sid,
         "players": {},
+        "votes": {"A": 0, "B": 0},  # contador de votos da rodada
     }
 
     join_room(room_code)
@@ -125,6 +126,27 @@ def handle_start_game(data):
     print(f"Jogo iniciado na sala {room_code}")
     emit("gameStarted", to=room_code)
 
+@socketio.on("endRound")
+def handle_end_round(data):
+    room_code = data.get("roomCode")
+    room = rooms.get(room_code)
+    if not room:
+        emit("errorMessage", "Sala não encontrada.")
+        return
+
+    votes = room.get("votes", {})
+    votosA = votes.get("A", 0)
+    votosB = votes.get("B", 0)
+
+    print(f"Resultados da sala {room_code}: A={votosA}, B={votosB}")
+
+    # manda o resultado para TODO MUNDO da sala
+    emit("roundResults", {"votosA": votosA, "votosB": votosB}, to=room_code)
+
+    # se quiser, já zera para a próxima rodada
+    room["votes"] = {"A": 0, "B": 0}
+
+
 
 @socketio.on("sendQuestion")
 def handle_send_question(data):
@@ -132,9 +154,12 @@ def handle_send_question(data):
 
     room = rooms.get(room_code)
     if not room:
-        emit("errorMessage", "Sala não encontrada.")
+        emit("errorMessage", "Sala não encontrada.", to=room_code)
         return
-    
+
+    # zera votos sempre que começar uma nova pergunta (nova rodada)
+    room["votes"] = {"A": 0, "B": 0}
+
     perguntas = [
         {"a": "Ser invisível",            "b": "Ler mentes"},
         {"a": "Nunca mais comer doce",    "b": "Nunca mais comer salgado"},
@@ -142,13 +167,6 @@ def handle_send_question(data):
         {"a": "Viajar no tempo",          "b": "Teletransportar"},
     ]
 
-    # opcional: só o host pode enviar perguntas
-    # sid = request.sid
-    # if sid != room["host_id"]:
-    #     emit("errorMessage", "Apenas o host pode enviar perguntas.")
-    #     return
-
-    # pega uma pergunta aleatória
     pergunta = random.choice(perguntas)
     option_a = pergunta["a"]
     option_b = pergunta["b"]
@@ -169,9 +187,16 @@ def handle_submit_answer(data):
     sid = request.sid
     print(f"Resposta na sala {room_code}: jogador={sid}, escolha={choice}")
 
-    # Aqui dá pra armazenar respostas, fazer contagem, etc.
-    # Por enquanto só confirma para o jogador
+    # garante estrutura de votos
+    if "votes" not in room:
+        room["votes"] = {"A": 0, "B": 0}
+
+    if choice in ("A", "B"):
+        room["votes"][choice] = room["votes"].get(choice, 0) + 1
+
+    # confirmação só para quem respondeu
     emit("answerReceived", {"choice": choice})
+    
 
 
 if __name__ == "__main__":

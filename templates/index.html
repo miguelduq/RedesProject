@@ -26,6 +26,10 @@
       display: none;
     }
 
+    #endRoundSection {
+      display: none;
+    }
+
   </style>
 
 </head>
@@ -58,6 +62,9 @@
     <button id="btnStartGame">Iniciar jogo</button>
   </div>
 
+  <div id="endRoundSection">
+    <button id="btnEndRound">Finalizar Rodada</button>
+  </div>
   
   <div id="playersSection">
     <hr>
@@ -90,7 +97,6 @@
     let currentRoomCode = null;
     let isHost = false; // aqui: por padrão ninguém é host
 
-
     // lista jogadores
     const playersSection = document.getElementById("playersSection");
     const playersList     = document.getElementById("playersList");
@@ -122,6 +128,10 @@
     // iniciar jogo
     const startGameSection = document.getElementById("startGameSection");
     const btnStartGame    = document.getElementById("btnStartGame");
+
+    // finalizar rodada 
+    const endRoundSection = document.getElementById("endRoundSection")
+    const btnEndRound = document.getElementById("btnEndRound")
 
     // messages 
     const messages        = document.getElementById("messages");
@@ -234,17 +244,46 @@
         btnChooseB.style.display = "inline-block";
         }
 
+      // mensagem
       messages.textContent = "Jogo iniciado!";
 
+      // mostra a pergunta e as opcoes de resposta A e B 
       questionSection.style.display = "block";
 
+      // Botao para enviar as perguntas
       sendQuestionSection.style.display = "block";
 
+      // mostra o botao de finalizar round
+      endRoundSection.style.display = "block";
+
+      // oculta o botao de iniciar partida
       startGameSection.style.display = "none";
 
+      // oculta a tela de espera
       waitingScreen.style.display = "none";
 
+      // oculta a lista de jogadores
       playersSection.style.display = "none";
+
+    });
+
+    btnEndRound.onclick = () => {
+      if (!isHost) return; // só o host finaliza
+
+      messages.textContent = "Round Finalizado";
+      socket.emit("endRound", { roomCode: currentRoomCode });
+    };
+    
+    socket.on("roundResults", ({ votosA, votosB }) => {
+      messages.textContent = `Resultados da rodada – A: ${votosA} voto(s) | B: ${votosB} voto(s)`;
+
+      // mostra o botão de iniciar próxima partida/rodada só para o host
+      if (isHost) {
+        startGameSection.style.display = "block";
+      }
+
+
+      questionSection.style.display = "none";
     });
 
 
@@ -257,14 +296,6 @@
         return;
       }
 
-      // const optionA = optA.value.trim();
-      // const optionB = optB.value.trim();
-
-      // if (!optionA || !optionB) {
-      //   messages.textContent = "Preencha as duas opções.";
-      //   return;
-      // }
-
       socket.emit("sendQuestion", {
         roomCode: currentRoomCode,
       });
@@ -275,9 +306,6 @@
       questionText.textContent = `Você prefere: A) ${optionA}  OU  B) ${optionB}`;
       messages.textContent = "";
     });
-
-
-
 
     // resposta do jogador
     btnChooseA.onclick = () => {
