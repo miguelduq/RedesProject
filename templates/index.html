@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Would You Rather - Python WebSocket</title>
+</head>
+<body>
+  <h1>Would You Rather (Demo com Flask-SocketIO)</h1>
+
+  <div>
+    <button id="btnCreateRoom">Criar Sala (Host)</button>
+    <p id="roomInfo"></p>
+  </div>
+
+  <hr>
+
+  <div>
+    <h3>Entrar em uma sala</h3>
+    <input id="roomCodeInput" placeholder="Código da sala" />
+    <input id="playerNameInput" placeholder="Seu nome" />
+    <button id="btnJoinRoom">Entrar</button>
+  </div>
+
+  <hr>
+
+  <div>
+    <h3>Host: enviar pergunta</h3>
+    <input id="optA" placeholder="Opção A" />
+    <input id="optB" placeholder="Opção B" />
+    <button id="btnSendQuestion">Enviar pergunta</button>
+    <button id="btnStartGame">Iniciar jogo</button>
+  </div>
+
+  <hr>
+
+  <div>
+    <h3>Jogadores na sala:</h3>
+    <pre id="playersList"></pre>
+
+    <h3>Pergunta atual:</h3>
+    <p id="questionText"></p>
+    <button id="btnChooseA">Escolher A</button>
+    <button id="btnChooseB">Escolher B</button>
+  </div>
+
+  <p id="messages" style="color:red;"></p>
+
+  <!-- Socket.IO client -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <script>
+    const socket = io(); // conecta no mesmo host/porta do Flask
+
+    let currentRoomCode = null;
+
+    const btnCreateRoom   = document.getElementById("btnCreateRoom");
+    const roomInfo        = document.getElementById("roomInfo");
+    const roomCodeInput   = document.getElementById("roomCodeInput");
+    const playerNameInput = document.getElementById("playerNameInput");
+    const btnJoinRoom     = document.getElementById("btnJoinRoom");
+    const playersList     = document.getElementById("playersList");
+    const messages        = document.getElementById("messages");
+    const optA            = document.getElementById("optA");
+    const optB            = document.getElementById("optB");
+    const btnSendQuestion = document.getElementById("btnSendQuestion");
+    const btnStartGame    = document.getElementById("btnStartGame");
+    const questionText    = document.getElementById("questionText");
+    const btnChooseA      = document.getElementById("btnChooseA");
+    const btnChooseB      = document.getElementById("btnChooseB");
+
+    // criar sala (host)
+    btnCreateRoom.onclick = () => {
+      socket.emit("createRoom");
+    };
+
+    // sala criada
+    socket.on("roomCreated", ({ roomCode }) => {
+      currentRoomCode = roomCode;
+      roomInfo.textContent = "Você é o host da sala: " + roomCode;
+      messages.textContent = "";
+    });
+
+    // entrar na sala
+    btnJoinRoom.onclick = () => {
+      const roomCode   = roomCodeInput.value.trim();
+      const playerName = playerNameInput.value.trim();
+
+      if (!roomCode || !playerName) {
+        messages.textContent = "Preencha o código da sala e seu nome.";
+        return;
+      }
+
+      currentRoomCode = roomCode;
+      socket.emit("joinRoom", { roomCode, playerName });
+    };
+
+    // atualização de jogadores
+    socket.on("playersUpdate", ({ players }) => {
+      playersList.textContent = JSON.stringify(players, null, 2);
+    });
+
+    // erros
+    socket.on("errorMessage", (msg) => {
+      messages.textContent = msg;
+    });
+
+    // iniciar jogo (host)
+    btnStartGame.onclick = () => {
+      if (!currentRoomCode) {
+        messages.textContent = "Nenhuma sala ativa.";
+        return;
+      }
+      socket.emit("startGame", { roomCode: currentRoomCode });
+    };
+
+    socket.on("gameStarted", () => {
+      messages.textContent = "Jogo iniciado!";
+    });
+
+    // enviar pergunta (host)
+    btnSendQuestion.onclick = () => {
+      if (!currentRoomCode) {
+        messages.textContent = "Nenhuma sala ativa.";
+        return;
+      }
+
+      const optionA = optA.value.trim();
+      const optionB = optB.value.trim();
+
+      if (!optionA || !optionB) {
+        messages.textContent = "Preencha as duas opções.";
+        return;
+      }
+
+      socket.emit("sendQuestion", {
+        roomCode: currentRoomCode,
+        optionA,
+        optionB
+      });
+    };
+
+    // receber nova pergunta
+    socket.on("newQuestion", ({ optionA, optionB }) => {
+      questionText.textContent = `Você prefere: A) ${optionA}  OU  B) ${optionB}`;
+      messages.textContent = "";
+    });
+
+    // resposta do jogador
+    btnChooseA.onclick = () => {
+      if (currentRoomCode) {
+        socket.emit("submitAnswer", { roomCode: currentRoomCode, choice: "A" });
+      }
+    };
+
+    btnChooseB.onclick = () => {
+      if (currentRoomCode) {
+        socket.emit("submitAnswer", { roomCode: currentRoomCode, choice: "B" });
+      }
+    };
+
+    socket.on("answerReceived", ({ choice }) => {
+      messages.textContent = "Resposta enviada: " + choice;
+    });
+  </script>
+</body>
+</html>
