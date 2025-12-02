@@ -66,9 +66,19 @@ def handle_disconnect():
 
 
 @socketio.on("createRoom")
-def handle_create_room():
+def handle_create_room(data):
     sid = request.sid
-    room_code = gerar_codigo_sala()
+
+    room_code = data.get("roomCode")  # vem do front
+
+    if not room_code:
+        emit("errorMessage", {"message": "Código da sala é obrigatório."})
+        return
+
+    # garante que não exista sala com o mesmo código
+    if room_code in rooms:
+        emit("errorMessage", {"message": "Esse código de sala já existe. Escolha outro."})
+        return
 
     rooms[room_code] = {
         "host_id": sid,
