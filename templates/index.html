@@ -88,6 +88,7 @@
     const socket = io(); // conecta no mesmo host/porta do Flask
 
     let currentRoomCode = null;
+    let isHost = false; // aqui: por padrão ninguém é host
 
 
     // lista jogadores
@@ -142,6 +143,7 @@
     // sala criada
     socket.on("roomCreated", ({ roomCode }) => {
       currentRoomCode = roomCode;
+      isHost = true; // você é o host dessa sala
 
       roomInfo.textContent = "Você é o host da sala: " + roomCode;
       messages.textContent = "";
@@ -170,6 +172,7 @@
       }
 
       currentRoomCode = roomCode;
+      isHost = false; // quem entra é jogador, não host
       socket.emit("joinRoom", { roomCode, playerName });
 
       // Esconde opções de criar sala
@@ -220,6 +223,17 @@
     };
 
     socket.on("gameStarted", () => {
+
+      if (isHost) {
+        // HOST: vê a pergunta, mas NÃO vê os botões de resposta
+        btnChooseA.style.display = "none";
+        btnChooseB.style.display = "none";
+      } else {
+        // JOGADOR: vê a pergunta e os botões
+        btnChooseA.style.display = "inline-block";
+        btnChooseB.style.display = "inline-block";
+        }
+
       messages.textContent = "Jogo iniciado!";
 
       questionSection.style.display = "block";
