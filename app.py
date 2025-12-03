@@ -66,28 +66,24 @@ def handle_disconnect():
 
 
 @socketio.on("createRoom")
-def handle_create_room(data):
+def handle_create_room():
     sid = request.sid
 
-    room_code = data.get("roomCode")  # vem do front
-
-    if not room_code:
-        emit("errorMessage", {"message": "Código da sala é obrigatório."})
-        return
+    # gera automaticamente
+    room_code = gerar_codigo_sala()
 
     # garante que não exista sala com o mesmo código
-    if room_code in rooms:
-        emit("errorMessage", {"message": "Esse código de sala já existe. Escolha outro."})
-        return
+    while room_code in rooms:
+        room_code = gerar_codigo_sala()
 
     rooms[room_code] = {
         "host_id": sid,
         "players": {},
-        "votes": {"A": 0, "B": 0},  # contador de votos da rodada
+        "votes": {"A": 0, "B": 0}
     }
 
     join_room(room_code)
-    print(f"Sala criada: {room_code} (host: {sid})")
+    print(f"Sala criada automaticamente: {room_code} (host: {sid})")
 
     emit("roomCreated", {"roomCode": room_code})
 

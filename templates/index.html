@@ -10,10 +10,6 @@
       display: none;
     }
 
-    #sendQuestionSection {
-      display: none;
-    }
-
     #startGameSection {
       display: none;
     }
@@ -48,13 +44,6 @@
     <input id="roomCodeInput" placeholder="Código da sala" />
     <input id="playerNameInput" placeholder="Seu nome" />
     <button id="btnJoinRoom">Entrar</button>
-  </div>
-
-  
-  <div id="sendQuestionSection">
-    <hr>
-    <h3>Host: enviar pergunta</h3>
-    <button id="btnSendQuestion">Enviar pergunta</button>
   </div>
 
   <div id="startGameSection">
@@ -122,9 +111,6 @@
     const playerNameInput = document.getElementById("playerNameInput");
     const btnJoinRoom     = document.getElementById("btnJoinRoom");
 
-    // mandar perguntas
-    const sendQuestionSection = document.getElementById("sendQuestionSection");
-    const btnSendQuestion = document.getElementById("btnSendQuestion");
 
     // iniciar jogo
     const startGameSection = document.getElementById("startGameSection");
@@ -142,13 +128,7 @@
 
     // criar sala (host)
     btnCreateRoom.onclick = () => {
-      const roomCode = prompt("Digite o código da sala que você quer criar (ex: SALA123):");
-
-      if (!roomCode) {
-        return; // usuário cancelou ou deixou vazio
-      }
-
-      socket.emit("createRoom", { roomCode });
+      socket.emit("createRoom");
     };
 
     // sala criada
@@ -188,9 +168,6 @@
 
       // Esconde opções de criar sala
       createRoomSection.style.display = "none";
-
-      // Esconde opções de mandar perguntas
-      sendQuestionSection.style.display = "none";
 
       // Esconde a área de entrar em sala
       joinRoomSection.style.display = "none";
@@ -254,17 +231,21 @@
         btnChooseA.style.display = "none";
         btnChooseB.style.display = "none";
 
-        // HOST PODE mandar perguntas e finalizar rodada
-        sendQuestionSection.style.display = "block";
+        // HOST PODE finalizar rodada
         endRoundSection.style.display = "block";
       } else {
         // JOGADOR: vê a pergunta e os botões de resposta
         btnChooseA.style.display = "inline-block";
         btnChooseB.style.display = "inline-block";
 
-        // JOGADOR NÃO pode mandar perguntas nem finalizar rodada
-        sendQuestionSection.style.display = "none";
+        // JOGADOR NÃO pode finalizar rodada
         endRoundSection.style.display = "none";
+      }
+
+
+      // envia a pergunta automaticamente quando o round incia
+      if (isHost) {
+        socket.emit("sendQuestion", { roomCode: currentRoomCode });
       }
     });
 
@@ -286,20 +267,6 @@
       questionSection.style.display = "none";
     });
 
-
-
-
-    // enviar pergunta (host)
-    btnSendQuestion.onclick = () => {
-      if (!currentRoomCode) {
-        messages.textContent = "Nenhuma sala ativa.";
-        return;
-      }
-
-      socket.emit("sendQuestion", {
-        roomCode: currentRoomCode,
-      });
-    };
 
     // receber nova pergunta
     socket.on("newQuestion", ({ optionA, optionB }) => {
