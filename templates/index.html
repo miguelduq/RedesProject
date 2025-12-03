@@ -9,29 +9,15 @@
 
   <style>
     /* começa sempre escondido (mantendo para não quebrar seu JS) */
-    #questionSection {
-      display: none;
-    }
-
-    #startGameSection {
-      display: none;
-    }
-
-    #playersSection {
-      display: none;
-    }
-
-    #waitingScreen {
-      display: none;
-    }
-
-    #endRoundSection {
-      display: none;
-    }
+    #questionSection { display: none; }
+    #startGameSection { display: none; }
+    #playersSection { display: none; }
+    #waitingScreen { display: none; }
+    #endRoundSection { display: none; }
   </style>
 </head>
 
-<body class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-slate-100 flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-slate-100 p-4">
 
   <div class="w-full max-w-3xl bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/10">
     
@@ -45,160 +31,145 @@
       </p>
     </header>
 
-    <!-- Layout principal: em tela grande, vira 2 colunas -->
     <div class="grid gap-8 md:grid-cols-2">
 
-      <!-- Coluna ESQUERDA: criar / entrar em sala -->
-      <div class="space-y-6">
+      <!-- Criar Sala (Host) -->
+      <div id="createRoomSection" class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60 shadow-lg shadow-black/20">
+        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300 text-sm font-bold">
+            1
+          </span>
+          Criar sala (Host)
+        </h2>
 
-        <!-- Criar sala -->
-        <div id="createRoomSection" class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60">
-          <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300 text-sm font-bold">
-              1
-            </span>
-            Criar sala (Host)
-          </h2>
+        <button
+          id="btnCreateRoom"
+          class="w-full mt-2 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 transition font-semibold text-sm md:text-base shadow-lg shadow-emerald-500/30"
+        >
+          Criar Sala (Host)
+        </button>
 
-          <button
-            id="btnCreateRoom"
-            class="w-full mt-2 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 transition font-semibold text-sm md:text-base shadow-lg shadow-emerald-500/30"
-          >
-            Criar Sala (Host)
-          </button>
-
-          <p id="roomInfo" class="mt-3 text-sm text-emerald-200/90 break-words"></p>
-        </div>
-
-        <!-- Entrar na sala -->
-        <div id="joinRoomSection" class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60">
-          <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/20 text-sky-300 text-sm font-bold">
-              2
-            </span>
-            Entrar em uma sala
-          </h2>
-
-          <div class="space-y-3">
-            <input
-              id="roomCodeInput"
-              placeholder="Código da sala"
-              class="w-full px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-600 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 placeholder:text-slate-400"
-            />
-
-            <input
-              id="playerNameInput"
-              placeholder="Seu nome"
-              class="w-full px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-600 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 placeholder:text-slate-400"
-            />
-
-            <button
-              id="btnJoinRoom"
-              class="w-full mt-1 px-4 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 active:bg-sky-700 transition font-semibold text-sm md:text-base shadow-lg shadow-sky-500/30"
-            >
-              Entrar
-            </button>
-          </div>
-        </div>
-
+        <p id="roomInfo" class="mt-3 text-sm text-emerald-200/90 break-words"></p>
       </div>
 
-      <!-- Coluna DIREITA: jogo / players / mensagens -->
-      <div class="space-y-6">
+      
+      <!-- Entrar em sala -->
+      <div id="joinRoomSection" class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60 shadow-lg shadow-black/20">
+        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/20 text-sky-300 text-sm font-bold">
+            2
+          </span>
+          Entrar em uma sala
+        </h2>
 
-        <!-- Start game (só host vê) -->
-        <div
-          id="startGameSection"
-          class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60"
-        >
-          <h2 class="text-lg font-semibold mb-3">Controle do Host</h2>
+        <div class="space-y-3">
+          <input
+            id="roomCodeInput"
+            placeholder="Código da sala"
+            class="w-full px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-600 text-sm md:text-base 
+                   focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
+          />
+
+          <input
+            id="playerNameInput"
+            placeholder="Seu nome"
+            class="w-full px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-600 text-sm md:text-base
+                   focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
+          />
+
           <button
-            id="btnStartGame"
-            class="w-full px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition font-semibold text-sm md:text-base shadow-lg shadow-amber-500/30"
+            id="btnJoinRoom"
+            class="w-full mt-1 px-4 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 active:bg-sky-700 transition font-semibold text-sm md:text-base shadow-lg shadow-sky-500/30"
           >
-            Iniciar jogo
+            Entrar
           </button>
         </div>
-
-        <!-- Finalizar rodada (só host vê) -->
-        <div
-          id="endRoundSection"
-          class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60"
-        >
-          <h2 class="text-lg font-semibold mb-3">Rodada atual</h2>
-          <button
-            id="btnEndRound"
-            class="w-full px-4 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 active:bg-rose-700 transition font-semibold text-sm md:text-base shadow-lg shadow-rose-500/30"
-          >
-            Finalizar rodada
-          </button>
-        </div>
-
-        <!-- Jogadores na sala -->
-        <div
-          id="playersSection"
-          class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60"
-        >
-          <h3 class="text-lg font-semibold mb-3">Jogadores na sala</h3>
-          <pre
-            id="playersList"
-            class="text-sm md:text-base bg-slate-950/40 rounded-xl p-3 max-h-40 overflow-y-auto whitespace-pre-wrap"
-          ></pre>
-        </div>
-
-        <!-- Pergunta atual + botões A/B -->
-        <div
-          id="questionSection"
-          class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60"
-        >
-          <h3 class="text-lg font-semibold mb-3">Pergunta atual</h3>
-          <p
-            id="questionText"
-            class="min-h-[3rem] text-sm md:text-base mb-4 text-slate-100"
-          ></p>
-
-          <div class="flex flex-col sm:flex-row gap-3">
-            <button
-              id="btnChooseA"
-              class="flex-1 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 transition font-semibold text-sm md:text-base shadow-lg shadow-emerald-500/30"
-            >
-              Escolher A
-            </button>
-
-            <button
-              id="btnChooseB"
-              class="flex-1 px-4 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 active:bg-rose-700 transition font-semibold text-sm md:text-base shadow-lg shadow-rose-500/30"
-            >
-              Escolher B
-            </button>
-          </div>
-        </div>
-
-        <!-- Tela de espera -->
-        <div
-          id="waitingScreen"
-          class="bg-slate-900/40 rounded-2xl p-5 border border-dashed border-slate-600 text-center"
-          style="margin-top: 0;"
-        >
-          <h2 class="text-lg font-semibold mb-2">
-            Aguardando o Host iniciar a partida...
-          </h2>
-          <p class="text-sm text-slate-300">
-            Assim que o Host começar, a pergunta vai aparecer aqui.
-          </p>
-        </div>
-
       </div>
+
     </div>
 
-    <!-- Mensagens / status -->
-    <p
-      id="messages"
-      class="mt-6 text-sm md:text-base text-rose-300 min-h-[1.5rem]"
-    ></p>
+
+    <!-- Seções dinâmicas da partida -->
+
+    <!-- Controles do Host -->
+    <div id="startGameSection" class="bg-slate-900/40 rounded-2xl p-5 mt-8 border border-slate-700/60">
+      <h2 class="text-lg font-semibold mb-3">Controle do Host</h2>
+      <button
+        id="btnStartGame"
+        class="w-full px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition font-semibold shadow-lg shadow-amber-500/30"
+      >
+        Iniciar jogo
+      </button>
+    </div>
+
+    <div id="endRoundSection" class="bg-slate-900/40 rounded-2xl p-5 mt-6 border border-slate-700/60">
+      <h2 class="text-lg font-semibold mb-3">Rodada atual</h2>
+      <button
+        id="btnEndRound"
+        class="w-full px-4 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 active:bg-rose-700 transition font-semibold shadow-lg shadow-rose-500/30"
+      >
+        Finalizar rodada
+      </button>
+    </div>
+
+    <!-- Jogadores -->
+    <div id="playersSection" class="bg-slate-900/40 rounded-2xl p-5 mt-6 border border-slate-700/60">
+      <h3 class="text-lg font-semibold mb-3">Jogadores na sala</h3>
+      <pre id="playersList"
+           class="text-sm md:text-base bg-slate-950/40 rounded-xl p-3 max-h-40 overflow-y-auto whitespace-pre-wrap">
+      </pre>
+    </div>
+
+    <!-- Tela de espera -->
+    <div id="waitingScreen" class="bg-slate-900/40 rounded-2xl p-5 mt-8 border border-dashed border-slate-600 text-center">
+      <h2 class="text-lg font-semibold mb-2">Aguardando o Host iniciar a partida...</h2>
+      <p class="text-sm text-slate-300">Assim que o Host começar, a pergunta aparecerá aqui.</p>
+    </div>
+
+    <!-- Mensagens -->
+    <p id="messages" class="mt-6 text-sm text-rose-300 min-h-[1.5rem]"></p>
   </div>
 
-  <!-- Socket.IO client -->
+  <!-- Pergunta -->
+    <div id="questionSection" class="hidden">
+
+      <div class="fixed inset-0 grid grid-cols-1 md:grid-cols-2">
+
+        <!-- OPÇÃO A -->
+        <button
+          id="btnChooseA"
+          class="flex flex-col items-center justify-center w-full h-full
+                bg-gradient-to-br from-red-500 to-pink-600
+                hover:brightness-110 transition text-white text-center p-4"
+        >
+          <p class="text-2xl md:text-4xl font-bold leading-tight px-6">
+            <span id="optionAText">Opção A</span>
+          </p>
+        </button>
+
+        <!-- OPÇÃO B -->
+        <button
+          id="btnChooseB"
+          class="flex flex-col items-center justify-center w-full h-full
+                bg-gradient-to-br from-blue-500 to-sky-600 
+                hover:brightness-110 transition text-white text-center p-4"
+        >
+          <p class="text-2xl md:text-4xl font-bold leading-tight px-6">
+            <span id="optionBText">Opção B</span>
+          </p>
+        </button>
+
+      </div>
+
+      <!-- PERGUNTA CENTRAL (por cima) -->
+      <div class="fixed top-10 left-1/2 -translate-x-1/2 text-center text-white drop-shadow-lg">
+        <h2 class="text-xl md:text-2xl font-semibold"></h2>
+        <p id="questionText" class="text-sm md:text-xl font-medium max-w-2xl mt-2"></p>
+      </div>
+
+    </div>
+
+  <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
   <script>
@@ -216,6 +187,9 @@
     const questionText    = document.getElementById("questionText");
     const btnChooseA      = document.getElementById("btnChooseA");
     const btnChooseB      = document.getElementById("btnChooseB");
+    // fullscreen texts
+    const optionAText = document.getElementById("optionAText");
+    const optionBText = document.getElementById("optionBText");
 
     // waiting screen 
     const waitingScreen = document.getElementById("waitingScreen");
@@ -330,39 +304,35 @@
     };
 
     socket.on("gameStarted", () => {
-      // mensagem
       messages.textContent = "Jogo iniciado!";
 
-      // mostra a área da pergunta
-      questionSection.style.display = "block";
-
-      // oculta o botão de iniciar partida e a tela de espera para todos
+      // Esconde controles antigos
       startGameSection.style.display = "none";
-      waitingScreen.style.display = "none";
-      playersSection.style.display = "none";
+      waitingScreen.style.display    = "none";
+      playersSection.style.display   = "none";
 
-      // ativa novamente os botoes de resposta (se forem renderizados)
+      // reativa botões de resposta (para os jogadores)
       btnChooseA.disabled = false;
       btnChooseB.disabled = false;
 
       if (isHost) {
-        // HOST: vê a pergunta, mas NÃO vê os botões de resposta
-        btnChooseA.style.display = "none";
-        btnChooseB.style.display = "none";
+        // HOST: não vê a tela fullscreen para não cobrir o botão de finalizar
+        questionSection.style.display = "none";
 
-        // HOST PODE finalizar rodada
+        // mostra o botão de finalizar rodada
         endRoundSection.style.display = "block";
-      } else {
-        // JOGADOR: vê a pergunta e os botões de resposta
-        btnChooseA.style.display = "inline-block";
-        btnChooseB.style.display = "inline-block";
 
-        // JOGADOR NÃO pode finalizar rodada
+      } else {
+        // JOGADOR: vê a tela fullscreen
+        questionSection.style.display = "block";
         endRoundSection.style.display = "none";
+
+        // garante que os botões apareçam (fullscreen)
+        btnChooseA.style.display = "block";
+        btnChooseB.style.display = "block";
       }
 
-
-      // envia a pergunta automaticamente quando o round incia
+      // envia a pergunta automaticamente quando o round começa (só o host)
       if (isHost) {
         socket.emit("sendQuestion", { roomCode: currentRoomCode });
       }
@@ -390,9 +360,16 @@
     });
 
 
-    // receber nova pergunta
     socket.on("newQuestion", ({ optionA, optionB }) => {
-      questionText.textContent = `Você prefere: A) ${optionA}  OU  B) ${optionB}`;
+
+      // Texto da pergunta geral (se quiser exibir no topo)
+      questionText.textContent = "Você prefere";
+
+      // Preenche os textos das metades
+      optionAText.textContent = optionA;
+      optionBText.textContent = optionB;
+
+      // Limpa mensagens antigas
       messages.textContent = "";
     });
 
