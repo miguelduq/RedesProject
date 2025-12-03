@@ -63,6 +63,7 @@
   </div>
 
   <div id="endRoundSection">
+    <hr>
     <button id="btnEndRound">Finalizar Rodada</button>
   </div>
   
@@ -233,38 +234,38 @@
     };
 
     socket.on("gameStarted", () => {
+      // mensagem
+      messages.textContent = "Jogo iniciado!";
+
+      // mostra a área da pergunta
+      questionSection.style.display = "block";
+
+      // oculta o botão de iniciar partida e a tela de espera para todos
+      startGameSection.style.display = "none";
+      waitingScreen.style.display = "none";
+      playersSection.style.display = "none";
+
+      // ativa novamente os botoes de resposta (se forem renderizados)
+      btnChooseA.disabled = false;
+      btnChooseB.disabled = false;
 
       if (isHost) {
         // HOST: vê a pergunta, mas NÃO vê os botões de resposta
         btnChooseA.style.display = "none";
         btnChooseB.style.display = "none";
+
+        // HOST PODE mandar perguntas e finalizar rodada
+        sendQuestionSection.style.display = "block";
+        endRoundSection.style.display = "block";
       } else {
-        // JOGADOR: vê a pergunta e os botões
+        // JOGADOR: vê a pergunta e os botões de resposta
         btnChooseA.style.display = "inline-block";
         btnChooseB.style.display = "inline-block";
-        }
 
-      // mensagem
-      messages.textContent = "Jogo iniciado!";
-
-      // mostra a pergunta e as opcoes de resposta A e B 
-      questionSection.style.display = "block";
-
-      // Botao para enviar as perguntas
-      sendQuestionSection.style.display = "block";
-
-      // mostra o botao de finalizar round
-      endRoundSection.style.display = "block";
-
-      // oculta o botao de iniciar partida
-      startGameSection.style.display = "none";
-
-      // oculta a tela de espera
-      waitingScreen.style.display = "none";
-
-      // oculta a lista de jogadores
-      playersSection.style.display = "none";
-
+        // JOGADOR NÃO pode mandar perguntas nem finalizar rodada
+        sendQuestionSection.style.display = "none";
+        endRoundSection.style.display = "none";
+      }
     });
 
     btnEndRound.onclick = () => {
@@ -281,7 +282,6 @@
       if (isHost) {
         startGameSection.style.display = "block";
       }
-
 
       questionSection.style.display = "none";
     });
@@ -311,12 +311,18 @@
     btnChooseA.onclick = () => {
       if (currentRoomCode) {
         socket.emit("submitAnswer", { roomCode: currentRoomCode, choice: "A" });
+        // so pode votar uma vez
+        btnChooseA.disabled = true;
+        btnChooseB.disabled = true;
       }
     };
 
     btnChooseB.onclick = () => {
       if (currentRoomCode) {
         socket.emit("submitAnswer", { roomCode: currentRoomCode, choice: "B" });
+        // so pode votar uma vez
+        btnChooseA.disabled = true;
+        btnChooseB.disabled = true;
       }
     };
 
