@@ -21,15 +21,15 @@
 <body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-slate-100 p-4">
 
   <!-- CARD PRINCIPAL (lobby, controles, resultados) -->
-  <div class="w-full max-w-3xl bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/10">
+  <div id="lobby" class="w-full max-w-3xl bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/10">
     
     <!-- Título -->
     <header class="text-center mb-8">
       <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
-        Would You Rather
+        Would You Rather ON
       </h1>
       <p class="text-sm md:text-base text-slate-200/80">
-        Demo com Flask-SocketIO • Crie uma sala, compartilhe o código e joguem juntos em tempo real.
+        Crie uma sala, compartilhe o código e joguem juntos em tempo real
       </p>
     </header>
 
@@ -42,7 +42,7 @@
           <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300 text-sm font-bold">
             1
           </span>
-          Criar sala (Host)
+          Criar sala 
         </h2>
 
         <button
@@ -92,22 +92,12 @@
 
     <!-- Controles do Host -->
     <div id="startGameSection" class="bg-slate-900/40 rounded-2xl p-5 mt-8 border border-slate-700/60">
-      <h2 class="text-lg font-semibold mb-3">Controle do Host</h2>
+      <h2 class="text-lg font-semibold mb-3">Inicie o jogo!</h2>
       <button
         id="btnStartGame"
         class="w-full px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition font-semibold shadow-lg shadow-amber-500/30"
       >
         Iniciar jogo
-      </button>
-    </div>
-
-    <div id="endRoundSection" class="bg-slate-900/40 rounded-2xl p-5 mt-6 border border-slate-700/60">
-      <h2 class="text-lg font-semibold mb-3">Rodada atual</h2>
-      <button
-        id="btnEndRound"
-        class="w-full px-4 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 active:bg-rose-700 transition font-semibold shadow-lg shadow-rose-500/30"
-      >
-        Finalizar rodada
       </button>
     </div>
 
@@ -194,13 +184,40 @@
           <span id="optionBText">Opção B</span>
         </p>
       </button>
-
     </div>
 
     <!-- texto da pergunta -->
     <div class="fixed top-8 left-1/2 -translate-x-1/2 text-center text-white drop-shadow-lg">
       <p id="questionText" class="text-2xl md:text-3xl font-semibold"></p>
     </div>
+
+    <div id="waitingOverlay"
+        class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
+      <div class="bg-slate-900/80 text-white px-6 py-4 rounded-2xl shadow-xl text-center max-w-md mx-4">
+        <p class="text-lg font-semibold mb-2">Resposta registrada!</p>
+        <p class="text-sm text-slate-200">
+          Aguarde o host finalizar a rodada para ver o resultado.
+        </p>
+      </div>
+    </div>
+  </div>
+
+    <!-- botao de end fora do principal card-->
+    <!-- BOTÃO DO HOST (fora do questionSection e fora do lobby) -->
+  <div id="endRoundSection"
+     class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 
+            bg-slate-900/70 backdrop-blur-lg p-5 rounded-2xl 
+            border border-slate-600 shadow-xl z-[9999]">
+
+    <h2 class="text-lg font-semibold mb-3">Veja o Resultado!</h2>
+    
+    <button
+      id="btnEndRound"
+      class="w-full px-4 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 
+            active:bg-rose-700 transition font-semibold shadow-lg shadow-rose-500/30"
+    >
+      Finalizar rodada
+    </button>
   </div>
 
   <!-- Socket.IO -->
@@ -223,6 +240,7 @@
     const btnChooseB       = document.getElementById("btnChooseB");
     const optionAText      = document.getElementById("optionAText");
     const optionBText      = document.getElementById("optionBText");
+    const waitingOverlay  = document.getElementById("waitingOverlay");
 
     // waiting screen 
     const waitingScreen    = document.getElementById("waitingScreen");
@@ -255,6 +273,9 @@
     // messages 
     const messages         = document.getElementById("messages");
 
+    // lobby
+    const lobby = document.getElementById("lobby");
+
     // criar sala (host)
     btnCreateRoom.onclick = () => {
       socket.emit("createRoom");
@@ -265,12 +286,15 @@
       currentRoomCode = roomCode;
       isHost = true;
 
-      roomInfo.textContent = "Você é o host da sala: " + roomCode;
+      roomInfo.innerHTML = `
+          Você é o host da sala: 
+          <span class="font-mono font-bold text-sky-300 text-lg">${roomCode}</span>
+        `;
       messages.textContent = "";
 
       joinRoomSection.style.display = "none";
       startGameSection.style.display = "block";
-      btnCreateRoom.disabled = true;
+      btnCreateRoom.style.display = "none";
     });
 
     // entrar na sala
@@ -319,33 +343,30 @@
     };
 
     socket.on("gameStarted", () => {
-      messages.textContent = "Jogo iniciado!";
+        // Some com o lobby ao entrar no modo pergunta
+        lobby.style.display = "none";
 
-      // esconde controles antigos
-      startGameSection.style.display = "none";
-      waitingScreen.style.display    = "none";
-      playersSection.style.display   = "none";
-      resultsSection.style.display   = "none";   // esconde resultados da rodada anterior
+        startGameSection.style.display = "none";
+        waitingScreen.style.display    = "none";
+        playersSection.style.display   = "none";
+        resultsSection.style.display   = "none";
 
-      // reativa botões de resposta (para os jogadores)
-      btnChooseA.disabled = false;
-      btnChooseB.disabled = false;
+        btnChooseA.disabled = false;
+        btnChooseB.disabled = false;
+        questionSection.style.display = "block"; 
 
-      if (isHost) {
-        // HOST: não vê a tela fullscreen para não cobrir o botão de finalizar
-        questionSection.style.display = "none";
-        endRoundSection.style.display = "block";
-      } else {
-        // JOGADOR: vê a tela fullscreen
-        questionSection.style.display = "block";
-        endRoundSection.style.display = "none";
-      }
+        waitingOverlay.classList.add("hidden");
 
-      // envia a pergunta automaticamente quando o round começa (só o host)
-      if (isHost) {
-        socket.emit("sendQuestion", { roomCode: currentRoomCode });
-      }
-    });
+        if (isHost) {
+            endRoundSection.style.display = "block";
+        } else {
+            endRoundSection.style.display = "none";
+        }
+
+        if (isHost) {
+          socket.emit("sendQuestion", { roomCode: currentRoomCode });
+        }
+      });
 
     // finalizar rodada (host)
     btnEndRound.onclick = () => {
@@ -356,25 +377,22 @@
     
     // resultados da rodada
     socket.on("roundResults", ({ votosA, votosB }) => {
-      // Oculta a pergunta fullscreen
       questionSection.style.display = "none";
 
-      // Mostra resultados
-      resultsSection.style.display = "block";
+      // Mostra o lobby de volta
+      lobby.style.display = "block";
 
-      // texto
+      resultsSection.style.display = "block";
+      
       resultsNumbers.textContent = `A: ${votosA} voto(s) | B: ${votosB} voto(s)`;
 
-      // porcentagem
       const total = votosA + votosB;
       const pctA = total === 0 ? 0 : (votosA / total) * 100;
       const pctB = total === 0 ? 0 : (votosB / total) * 100;
 
-      // anima barras
       barA.style.width = pctA + "%";
       barB.style.width = pctB + "%";
 
-      // Host pode iniciar próxima rodada
       if (isHost) {
         startGameSection.style.display = "block";
       }
@@ -390,12 +408,16 @@
       messages.textContent     = "";
     });
 
-    // resposta do jogador
     btnChooseA.onclick = () => {
       if (currentRoomCode) {
         socket.emit("submitAnswer", { roomCode: currentRoomCode, choice: "A" });
         btnChooseA.disabled = true;
         btnChooseB.disabled = true;
+
+        // Jogador: escurece tela e mostra aviso
+        waitingOverlay.classList.remove("hidden");
+        if (!isHost) {
+        }
       }
     };
 
@@ -404,6 +426,10 @@
         socket.emit("submitAnswer", { roomCode: currentRoomCode, choice: "B" });
         btnChooseA.disabled = true;
         btnChooseB.disabled = true;
+
+        waitingOverlay.classList.remove("hidden");
+        if (!isHost) {
+        }
       }
     };
 
