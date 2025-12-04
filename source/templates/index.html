@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Would You Rather - Python WebSocket</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* começa sempre escondido (mantendo o padrão do seu JS) */
+    #questionSection { display: none; }
+    #startGameSection { display: none; }
+    #playersSection { display: none; }
+    #waitingScreen { display: none; }
+    #endRoundSection { display: none; }
+    #resultsSection { display: none; }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-slate-100 p-4">
+
+  <!-- CARD PRINCIPAL (lobby, controles, resultados) -->
+  <div id="lobby" class="w-full max-w-3xl bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/10">
+    
+    <!-- Título -->
+    <header class="text-center mb-8">
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
+        Would You Rather ON
+      </h1>
+      <p class="text-sm md:text-base text-slate-200/80">
+        Crie uma sala, compartilhe o código e joguem juntos em tempo real
+      </p>
+    </header>
+
+    <!-- Criar / Entrar em sala -->
+    <div class="grid gap-8 md:grid-cols-2">
+
+      <!-- Criar Sala (Host) -->
+      <div id="createRoomSection" class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60 shadow-lg shadow-black/20">
+        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300 text-sm font-bold">
+            1
+          </span>
+          Criar sala 
+        </h2>
+
+        <button
+          id="btnCreateRoom"
+          class="w-full mt-2 px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 transition font-semibold text-sm md:text-base shadow-lg shadow-emerald-500/30"
+        >
+          Criar Sala (Host)
+        </button>
+
+        <p id="roomInfo" class="mt-3 text-sm text-emerald-200/90 break-words"></p>
+      </div>
+
+      <!-- Entrar em sala -->
+      <div id="joinRoomSection" class="bg-slate-900/40 rounded-2xl p-5 border border-slate-700/60 shadow-lg shadow-black/20">
+        <h2 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/20 text-sky-300 text-sm font-bold">
+            2
+          </span>
+          Entrar em uma sala
+        </h2>
+
+        <div class="space-y-3">
+          <input
+            id="roomCodeInput"
+            placeholder="Código da sala"
+            class="w-full px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-600 text-sm md:text-base 
+                   focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
+          />
+
+          <input
+            id="playerNameInput"
+            placeholder="Seu nome"
+            class="w-full px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-600 text-sm md:text-base
+                   focus:outline-none focus:ring-2 focus:ring-sky-500 placeholder:text-slate-400"
+          />
+
+          <button
+            id="btnJoinRoom"
+            class="w-full mt-1 px-4 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 active:bg-sky-700 transition font-semibold text-sm md:text-base shadow-lg shadow-sky-500/30"
+          >
+            Entrar
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Controles do Host -->
+    <div id="startGameSection" class="bg-slate-900/40 rounded-2xl p-5 mt-8 border border-slate-700/60">
+      <h2 class="text-lg font-semibold mb-3">Inicie o jogo!</h2>
+      <button
+        id="btnStartGame"
+        class="w-full px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition font-semibold shadow-lg shadow-amber-500/30"
+      >
+        Iniciar jogo
+      </button>
+    </div>
+
+    <!-- Jogadores -->
+    <div id="playersSection" class="bg-slate-900/40 rounded-2xl p-5 mt-6 border border-slate-700/60">
+      <h3 class="text-lg font-semibold mb-3">Jogadores na sala</h3>
+      <pre id="playersList"
+           class="text-sm md:text-base bg-slate-950/40 rounded-xl p-3 max-h-40 overflow-y-auto whitespace-pre-wrap">
+      </pre>
+    </div>
+
+    <!-- Tela de espera -->
+    <div id="waitingScreen" class="bg-slate-900/40 rounded-2xl p-5 mt-8 border border-dashed border-slate-600 text-center">
+      <h2 class="text-lg font-semibold mb-2">Aguardando o Host iniciar a partida...</h2>
+      <p class="text-sm text-slate-300">Assim que o Host começar, a pergunta aparecerá aqui.</p>
+    </div>
+
+    <!-- Mensagens -->
+    <p id="messages" class="mt-6 text-sm text-rose-300 min-h-[1.5rem]"></p>
+
+    <!-- RESULTADOS (gráfico de barras) -->
+    <div id="resultsSection" class="mt-10 text-center text-white">
+      <h2 class="text-2xl font-bold mb-4">Resultados da Rodada</h2>
+
+      <div class="w-full max-w-xl mx-auto bg-white/10 backdrop-blur-md p-6 rounded-3xl shadow-xl">
+        <!-- Texto com números -->
+        <p id="resultsNumbers" class="mb-6 text-lg font-medium"></p>
+
+        <!-- Barras -->
+        <div class="space-y-4">
+
+          <!-- Barra A -->
+          <div>
+            <p class="font-semibold mb-1 text-red-300">Opção A</p>
+            <div class="w-full bg-white/10 h-6 rounded-lg overflow-hidden">
+              <div id="barA"
+                   class="h-full bg-gradient-to-r from-red-500 to-pink-600 transition-all duration-700"
+                   style="width: 0%">
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra B -->
+          <div>
+            <p class="font-semibold mb-1 text-blue-300">Opção B</p>
+            <div class="w-full bg-white/10 h-6 rounded-lg overflow-hidden">
+              <div id="barB"
+                   class="h-full bg-gradient-to-r from-blue-500 to-sky-600 transition-all duration-700"
+                   style="width: 0%">
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- fim do card principal -->
+
+  <!-- PERGUNTA FULLSCREEN (fora do card) -->
+  <div id="questionSection" class="fixed inset-0 hidden z-50">
+    <div class="w-full h-full grid grid-cols-1 md:grid-cols-2">
+
+      <!-- OPÇÃO A -->
+      <button
+        id="btnChooseA"
+        class="w-full h-full flex items-center justify-center
+               bg-gradient-to-br from-red-500 to-pink-600
+               hover:brightness-110 transition text-white text-center p-4"
+      >
+        <p class="text-3xl md:text-5xl font-bold leading-tight max-w-xl">
+          <span id="optionAText">Opção A</span>
+        </p>
+      </button>
+
+      <!-- OPÇÃO B -->
+      <button
+        id="btnChooseB"
+        class="w-full h-full flex items-center justify-center
+               bg-gradient-to-br from-blue-500 to-sky-600 
+               hover:brightness-110 transition text-white text-center p-4"
+      >
+        <p class="text-3xl md:text-5xl font-bold leading-tight max-w-xl">
+          <span id="optionBText">Opção B</span>
+        </p>
+      </button>
+    </div>
+
+    <!-- texto da pergunta -->
+    <div class="fixed top-8 left-1/2 -translate-x-1/2 text-center text-white drop-shadow-lg">
+      <p id="questionText" class="text-2xl md:text-3xl font-semibold"></p>
+    </div>
+
+    <div id="waitingOverlay"
+        class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[60]">
+      <div class="bg-slate-900/80 text-white px-6 py-4 rounded-2xl shadow-xl text-center max-w-md mx-4">
+        <p class="text-lg font-semibold mb-2">Resposta registrada!</p>
+        <p class="text-sm text-slate-200">
+          Aguarde o host finalizar a rodada para ver o resultado.
+        </p>
+      </div>
+    </div>
+  </div>
+
+    <!-- botao de end fora do principal card-->
+    <!-- BOTÃO DO HOST (fora do questionSection e fora do lobby) -->
+  <div id="endRoundSection"
+     class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 
+            bg-slate-900/70 backdrop-blur-lg p-5 rounded-2xl 
+            border border-slate-600 shadow-xl z-[9999]">
+
+    <h2 class="text-lg font-semibold mb-3">Veja o Resultado!</h2>
+    
+    <button
+      id="btnEndRound"
+      class="w-full px-4 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 
+            active:bg-rose-700 transition font-semibold shadow-lg shadow-rose-500/30"
+    >
+      Finalizar rodada
+    </button>
+  </div>
+
+  <!-- Socket.IO -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <script>
+    const socket = io(); // conecta no mesmo host/porta do Flask
+
+    let currentRoomCode = null;
+    let isHost = false; // por padrão ninguém é host
+
+    // lista jogadores
+    const playersSection   = document.getElementById("playersSection");
+    const playersList      = document.getElementById("playersList");
+
+    // Questions Section (fullscreen)
+    const questionSection  = document.getElementById("questionSection");
+    const questionText     = document.getElementById("questionText");
+    const btnChooseA       = document.getElementById("btnChooseA");
+    const btnChooseB       = document.getElementById("btnChooseB");
+    const optionAText      = document.getElementById("optionAText");
+    const optionBText      = document.getElementById("optionBText");
+    const waitingOverlay  = document.getElementById("waitingOverlay");
+
+    // waiting screen 
+    const waitingScreen    = document.getElementById("waitingScreen");
+
+    // create Room Section
+    const btnCreateRoom    = document.getElementById("btnCreateRoom");
+    const createRoomSection= document.getElementById("createRoomSection");
+    const roomInfo         = document.getElementById("roomInfo");
+
+    // entrar na sala
+    const joinRoomSection  = document.getElementById("joinRoomSection");
+    const roomCodeInput    = document.getElementById("roomCodeInput");
+    const playerNameInput  = document.getElementById("playerNameInput");
+    const btnJoinRoom      = document.getElementById("btnJoinRoom");
+
+    // iniciar jogo
+    const startGameSection = document.getElementById("startGameSection");
+    const btnStartGame     = document.getElementById("btnStartGame");
+
+    // finalizar rodada 
+    const endRoundSection  = document.getElementById("endRoundSection");
+    const btnEndRound      = document.getElementById("btnEndRound");
+
+    // resultados
+    const resultsSection   = document.getElementById("resultsSection");
+    const resultsNumbers   = document.getElementById("resultsNumbers");
+    const barA             = document.getElementById("barA");
+    const barB             = document.getElementById("barB");
+
+    // messages 
+    const messages         = document.getElementById("messages");
+
+    // lobby
+    const lobby = document.getElementById("lobby");
+
+    // criar sala (host)
+    btnCreateRoom.onclick = () => {
+      socket.emit("createRoom");
+    };
+
+    // sala criada
+    socket.on("roomCreated", ({ roomCode }) => {
+      currentRoomCode = roomCode;
+      isHost = true;
+
+      roomInfo.innerHTML = `
+          Você é o host da sala: 
+          <span class="font-mono font-bold text-sky-300 text-lg">${roomCode}</span>
+        `;
+      messages.textContent = "";
+
+      joinRoomSection.style.display = "none";
+      startGameSection.style.display = "block";
+      btnCreateRoom.style.display = "none";
+    });
+
+    // entrar na sala
+    btnJoinRoom.onclick = () => {
+      const roomCode   = roomCodeInput.value.trim();
+      const playerName = playerNameInput.value.trim();
+
+      if (!roomCode || !playerName) {
+        messages.textContent = "Preencha o código da sala e seu nome.";
+        return;
+      }
+
+      currentRoomCode = roomCode;
+      isHost = false;
+      socket.emit("joinRoom", { roomCode, playerName });
+
+      createRoomSection.style.display = "none";
+      joinRoomSection.style.display   = "none";
+      waitingScreen.style.display     = "block";
+    };
+
+    // atualização de jogadores
+    socket.on("playersUpdate", ({ players }) => {
+      playersSection.style.display = "block";
+      const nomes = Object.values(players);
+
+      if (nomes.length === 0) {
+        playersList.textContent = "Nenhum jogador conectado ainda.";
+      } else {
+        playersList.textContent = nomes.map(n => "- " + n).join("\n");
+      }
+    });
+
+    // erros
+    socket.on("errorMessage", (msg) => {
+      messages.textContent = msg;
+    });
+
+    // iniciar jogo (host)
+    btnStartGame.onclick = () => {
+      if (!currentRoomCode) {
+        messages.textContent = "Nenhuma sala ativa.";
+        return;
+      }
+      socket.emit("startGame", { roomCode: currentRoomCode });
+    };
+
+    socket.on("gameStarted", () => {
+        // Some com o lobby ao entrar no modo pergunta
+        lobby.style.display = "none";
+
+        startGameSection.style.display = "none";
+        waitingScreen.style.display    = "none";
+        playersSection.style.display   = "none";
+        resultsSection.style.display   = "none";
+
+        btnChooseA.disabled = false;
+        btnChooseB.disabled = false;
+        questionSection.style.display = "block"; 
+
+        waitingOverlay.classList.add("hidden");
+
+        if (isHost) {
+            endRoundSection.style.display = "block";
+        } else {
+            endRoundSection.style.display = "none";
+        }
+
+        if (isHost) {
+          socket.emit("sendQuestion", { roomCode: currentRoomCode });
+        }
+      });
+
+    // finalizar rodada (host)
+    btnEndRound.onclick = () => {
+      if (!isHost) return;
+      messages.textContent = "Round Finalizado";
+      socket.emit("endRound", { roomCode: currentRoomCode });
+    };
+    
+    // resultados da rodada
+    socket.on("roundResults", ({ votosA, votosB }) => {
+      questionSection.style.display = "none";
+
+      // Mostra o lobby de volta
+      lobby.style.display = "block";
+
+      resultsSection.style.display = "block";
+      
+      resultsNumbers.textContent = `A: ${votosA} voto(s) | B: ${votosB} voto(s)`;
+
+      const total = votosA + votosB;
+      const pctA = total === 0 ? 0 : (votosA / total) * 100;
+      const pctB = total === 0 ? 0 : (votosB / total) * 100;
+
+      barA.style.width = pctA + "%";
+      barB.style.width = pctB + "%";
+
+      if (isHost) {
+        startGameSection.style.display = "block";
+      }
+
+      endRoundSection.style.display = "none";
+    });
+
+    // nova pergunta
+    socket.on("newQuestion", ({ optionA, optionB }) => {
+      questionText.textContent = "Você prefere...";
+      optionAText.textContent  = optionA;
+      optionBText.textContent  = optionB;
+      messages.textContent     = "";
+    });
+
+    btnChooseA.onclick = () => {
+      if (currentRoomCode) {
+        socket.emit("submitAnswer", { roomCode: currentRoomCode, choice: "A" });
+        btnChooseA.disabled = true;
+        btnChooseB.disabled = true;
+
+        // Jogador: escurece tela e mostra aviso
+        waitingOverlay.classList.remove("hidden");
+        if (!isHost) {
+        }
+      }
+    };
+
+    btnChooseB.onclick = () => {
+      if (currentRoomCode) {
+        socket.emit("submitAnswer", { roomCode: currentRoomCode, choice: "B" });
+        btnChooseA.disabled = true;
+        btnChooseB.disabled = true;
+
+        waitingOverlay.classList.remove("hidden");
+        if (!isHost) {
+        }
+      }
+    };
+
+    socket.on("answerReceived", ({ choice }) => {
+      messages.textContent = "Resposta enviada: " + choice;
+    });
+  </script>
+</body>
+</html>
